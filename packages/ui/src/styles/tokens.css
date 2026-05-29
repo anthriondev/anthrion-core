@@ -1,0 +1,19 @@
+/*
+ * ANTHRION brand colours as CSS variables (DESIGN_SYSTEM.md §9).
+ *
+ * Single source = ../tokens.ts. This file re-declares the brand palette as CSS
+ * variables for consumers that style outside Tailwind (e.g. the Sprint-1 auth pages
+ * use `var(--color-*)`). `../tokens.test.ts` asserts these values match tokens.ts,
+ * so the two never drift.
+ *
+ * Loaded once by apps/web (see apps/web/src/app/layout.tsx).
+ */
+:root {
+  --color-magenta-core: #e0218a;
+  --color-magenta-light: #ff6cae;
+  --color-magenta-deep: #b81c7d;
+  --color-void: #040406;
+  --color-surface: #0c0810;
+  --color-trace: #241620;
+  --color-ice: #f4eef2;
+}

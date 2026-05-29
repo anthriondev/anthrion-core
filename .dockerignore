@@ -1,0 +1,25 @@
+# Build-context excludes for the scan-runtime image (packages/sandbox-runtime/Dockerfile).
+# Keep the context to source + manifests + lockfile so the image is built reproducibly
+# from the frozen lockfile, NOT from host build artifacts.
+
+# Dependencies + build outputs are reinstalled/recompiled inside the image.
+**/node_modules
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+
+# VCS / env / local junk.
+.git
+.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+
+# Frontend build output (not needed by the sandbox image).
+**/.next
+**/out
+
+# Dev artifacts unrelated to the sandbox image.
+scripts/screenshots
+**/.DS_Store

@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The brand colour CSS variables (--color-*) come from @anthrion/ui/styles/tokens.css,
+ * imported once in layout.tsx — the single token source (DESIGN_SYSTEM.md §9).
+ */
+body {
+  background-color: var(--color-void);
+  color: var(--color-ice);
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}

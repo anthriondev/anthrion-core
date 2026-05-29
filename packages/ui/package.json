@@ -1,0 +1,52 @@
+{
+  "name": "@anthrion/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens": {
+      "types": "./tokens.ts",
+      "development": "./tokens.ts",
+      "default": "./dist/tokens.js"
+    },
+    "./tailwind-preset": {
+      "types": "./src/tailwind-preset.ts",
+      "development": "./src/tailwind-preset.ts",
+      "default": "./dist/tailwind-preset.js"
+    },
+    "./styles/tokens.css": "./src/styles/tokens.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "tsx --test src/*.test.tsx src/components/*.test.tsx"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@anthrion/shared": "workspace:*",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "@anthrion/config": "workspace:*",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.22.3",
+    "typescript": "^5.7.3"
+  }
+}

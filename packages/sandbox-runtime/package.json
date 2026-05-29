@@ -1,0 +1,35 @@
+{
+  "name": "@anthrion/sandbox-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Code that runs INSIDE the per-scan Docker sandbox (T3.2). Minimal surface: depends only on scan-engine. The worker↔container wire contract lives here because it references scan-engine's Finding (which `shared` may not import, ARCHITECTURE.md §2).",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "@anthrion/config": "workspace:*",
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@anthrion/scan-engine": "workspace:*",
+    "playwright": "^1.60.0",
+    "zod": "^4.4.3"
+  }
+}

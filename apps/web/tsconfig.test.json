@@ -1,0 +1,7 @@
+{
+  "//": "Used only by `tsx --test` (via TSX_TSCONFIG_PATH). The app's tsconfig.json uses jsx:preserve (Next compiles JSX); for standalone test execution tsx needs the automatic JSX runtime so test/component files run without importing React.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
+}

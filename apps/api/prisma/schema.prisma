@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client"
+  // Output into the shared @anthrion/db package so both apps/api and apps/worker import
+  // the same client (T3.4 decision). The schema stays the single source of truth here.
+  output   = "../../../packages/db/src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WalletChain {
+  EVM
+  SOLANA
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum ScanType {
+  AI_LLM_ATTACK
+  WEB_APP_VULN
+  // Phase 1.5 Sprint A1 (T-A1.3): API security scan against an HTTP API,
+  // either single-URL (raw mode) or driven by a parsed OpenAPI/Swagger spec
+  // (spec mode). Additive enum value — non-destructive; pre-existing rows
+  // retain their existing scanType. Migration: 20260527_add_api_scan_scan_type.
+  API_SCAN
+  // Phase 1.5 Sprint A3 (T-A3.7): Web3 dApp scan — Layer 1 wallet interaction,
+  // Layer 2 frontend/infrastructure, Layer 3 on-chain context. Additive enum
+  // value — non-destructive; pre-existing rows retain their existing scanType.
+  // Migration: 20260528_add_web3_dapp_scan_type. Pairs the engine-side
+  // `scanTypeSchema.options` widening shipped earlier in T-A3.2.
+  WEB3_DAPP
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum ArtifactType {
+  SCAN_LOG
+  // The downloadable PDF security report generated from a scan's findings (T6.1).
+  // Distinct from SCAN_LOG so the api can serve exactly the report blob. One per scan.
+  REPORT_PDF
+}
+
+// How a scan was paid for (T5.1). PAID = real x402/USDC payment; FREE_PRICING = global
+// env price is 0 (promo phase); FREE_TRIAL = one free scan per account (logic in T5.3).
+enum PaymentKind {
+  PAID
+  FREE_TRIAL
+  FREE_PRICING
+}
+
+// Payment lifecycle (T5.1, billing mechanism A: capture up front, refund on failure).
+// FREE_* go straight to SETTLED (nothing on-chain). PAID: SETTLED on success; on a
+// FAILED / partial scan it moves REFUND_PENDING -> REFUNDED (refund is our own logic).
+enum PaymentStatus {
+  PENDING
+  SETTLED
+  REFUND_PENDING
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  privyUserId String   @unique
+  email       String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  wallets     Wallet[]
+  scans       Scan[]
+  payments    Payment[]
+}
+
+model Wallet {
+  id        String      @id @default(cuid())
+  address   String      @unique
+  chain     WalletChain
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
+}
+
+model Scan {
+  id       String     @id @default(cuid())
+  status   ScanStatus @default(QUEUED)
+  scanType ScanType
+
+  // Non-sensitive target info, enough to know what was scanned. `targetUrl` holds the
+  // web URL or AI endpoint URL; it is null for a pasted system-prompt target.
+  // `targetKind` is 'endpoint' | 'system-prompt' for AI scans, null for web scans.
+  // Target auth secrets/credentials are NEVER stored in the DB (CLAUDE.md §7).
+  targetUrl  String?
+  targetKind String?
+
+  // Set when status = FAILED — the ScanRunResult failure reason (T3.3).
+  failureReason String?
+
+  // Coverage summary for the generated PDF report (T6.2). Persisted by the worker AT
+  // THE SAME TIME the REPORT_PDF artifact is recorded, so the UI and the PDF share ONE
+  // source of truth for partial/complete (no second derivation). JSON shape:
+  // `{ complete: boolean, gaps: { kind, title, detail }[] }` — validated with Zod at the
+  // boundary (CLAUDE.md §3). Null for FAILED scans, scans whose report generation never
+  // ran (T6.1 best-effort failure), and legacy scans from before T6.2. The UI treats
+  // null as NEUTRAL — never as a claim of completeness (CLAUDE.md §3 honesty).
+  reportCoverage Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  findings  Finding[]
+  artifacts Artifact[]
+  // One payment funds exactly one scan (T5.1). Optional: created by the pay gate (T5.2).
+  payment Payment?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  // Set by the worker when execution begins / finishes.
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  @@index([userId])
+}
+
+model Finding {
+  id     String @id @default(cuid())
+  scanId String
+  scan   Scan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  // The engine's own Finding id (e.g. "layer1:pi-direct-override", "web:misconfig-...")
+  // is preserved so no engine information is lost in the DB id remap.
+  engineId String
+
+  severity FindingSeverity
+
+  // The engine category is a union of three OWASP taxonomies (LLM / Web / Agentic).
+  // Stored as a String to stay lossless without a giant enum that must track all three;
+  // the value is already Zod-validated by the engine before it is written.
+  category String
+
+  title       String
+  description String
+
+  // Structured evidence { input, output, metadata? } as a JSON column: it is a
+  // self-contained blob always read together with its finding, so a column is lossless
+  // and avoids an extra join. No information is dropped vs the engine `Finding`.
+  evidence Json
+
+  recommendation String
+  createdAt      DateTime @default(now())
+
+  @@index([scanId])
+}
+
+model Artifact {
+  id     String       @id @default(cuid())
+  scanId String
+  scan   Scan         @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  type   ArtifactType
+
+  // MinIO object reference (the blob itself lives in object storage, not Postgres).
+  bucket      String
+  objectKey   String
+  contentType String
+  sizeBytes   Int
+
+  createdAt DateTime @default(now())
+
+  @@index([scanId])
+}
+
+// Payment for a scan (T5.1, x402-native, billing mechanism A). One row per scan.
+//
+// Double-spend guards (uniqueness): `scanId` (one payment per scan) AND, for PAID rows,
+// the on-chain authorization `@@unique([network, nonce])` + unique `settleTxHash` — a
+// single EIP-3009 authorization / settlement can fund at most one scan. FREE_* rows leave
+// the on-chain fields null (NULLs are distinct in Postgres, so many FREE_* rows coexist).
+//
+// SECURITY: this row is PROOF of payment only. No private keys / secrets are ever stored
+// here (CLAUDE.md §7). `rawPayload` holds the validated public x402 payload for audit.
+model Payment {
+  id     String @id @default(cuid())
+  scanId String @unique
+  scan   Scan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  kind   PaymentKind
+  status PaymentStatus @default(PENDING)
+
+  // Payer wallet (the x402 `from`). Null for FREE_PRICING (no wallet involved); for
+  // FREE_TRIAL it is the wallet the trial is tracked against (T5.3).
+  walletAddress String?
+
+  // x402 / on-chain proof — all null for FREE_* (no transaction). Amounts are atomic USDC
+  // (6 decimals) stored as strings to avoid float/bigint precision loss.
+  network      String?
+  asset        String?
+  amountAtomic String?
+  payTo        String?
+  nonce        String?
+  scheme       String?
+  x402Version  Int?
+  settleTxHash String? @unique
+  refundTxHash String?
+  rawPayload   Json?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  settledAt  DateTime?
+  refundedAt DateTime?
+
+  @@unique([network, nonce])
+  @@index([userId])
+}

@@ -1,0 +1,12 @@
+-- AlterEnum
+-- Phase 1.5 Sprint A3 (T-A3.7): adds WEB3_DAPP to the ScanType enum.
+-- Additive, non-destructive — pre-existing rows retain their scanType
+-- (AI_LLM_ATTACK / WEB_APP_VULN / API_SCAN). Required before the worker can
+-- persist a scan of type web3-dapp. Mirrors the engine-side `scanTypeSchema`
+-- widening shipped in T-A3.2 (commit 1f976f4) and the L1/L3 runner surfaces
+-- shipped in T-A3.3 / T-A3.5.
+--
+-- Isolated migration (Postgres ALTER TYPE ADD VALUE has a transaction-wrap
+-- constraint — it cannot share a migration with statements that would force
+-- a wrapping transaction). Pattern mirrors 20260527003613_add_api_scan_scan_type.
+ALTER TYPE "ScanType" ADD VALUE 'WEB3_DAPP';

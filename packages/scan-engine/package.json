@@ -1,0 +1,26 @@
+{
+  "name": "@anthrion/scan-engine",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "@anthrion/config": "workspace:*",
+    "tsx": "^4.22.3",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "playwright": "^1.60.0",
+    "zod": "^4.4.3"
+  }
+}

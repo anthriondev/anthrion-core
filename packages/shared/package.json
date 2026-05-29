@@ -1,0 +1,51 @@
+{
+  "name": "@anthrion/shared",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./scan-api": {
+      "types": "./src/scan-api.ts",
+      "development": "./src/scan-api.ts",
+      "default": "./dist/scan-api.js"
+    },
+    "./scan-stream": {
+      "types": "./src/scan-stream.ts",
+      "development": "./src/scan-stream.ts",
+      "default": "./dist/scan-stream.js"
+    },
+    "./payment-api": {
+      "types": "./src/payment-api.ts",
+      "development": "./src/payment-api.ts",
+      "default": "./dist/payment-api.js"
+    },
+    "./x402": {
+      "types": "./src/x402.ts",
+      "development": "./src/x402.ts",
+      "default": "./dist/x402.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit false --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "echo \"test: ok\""
+  },
+  "devDependencies": {
+    "@anthrion/config": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "bullmq": "^5.77.1",
+    "zod": "^4.4.3"
+  }
+}

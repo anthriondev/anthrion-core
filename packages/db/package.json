@@ -1,0 +1,33 @@
+{
+  "name": "@anthrion/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Prisma Client (T3.4). The schema lives in apps/api/prisma; its generator OUTPUTS the client here so both api and worker import @anthrion/db instead of each other (ARCHITECTURE.md §2).",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit false --outDir dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "test": "echo \"test: ok\""
+  },
+  "devDependencies": {
+    "@anthrion/config": "workspace:*",
+    "@types/node": "^25.9.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "pg": "^8.21.0"
+  }
+}

@@ -1,0 +1,30 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.next/
+out/
+
+coverage/
+scripts/screenshots/
+
+# T6.2 Part B verification run output (PDFs, raw evidence JSON, server logs).
+# The structured T6.2 report lives in the repo at a tracked path; this dir
+# holds the heavy raw artifacts of a single run.
+.t62-logs/
+
+# Brand asset archive — extracted into brand/ and apps/web/public/brand/.
+# The extracted assets ARE committed; the source archive is not.
+anthrion_asset.zip
